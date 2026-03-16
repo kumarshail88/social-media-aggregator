@@ -32,8 +32,6 @@ func (m *MastodonApiConnector) Poll(ctx context.Context, ch chan MastodonMessage
 				return err
 			}
 			sinceId = lastId
-			fmt.Println("lastId " + lastId)
-			fmt.Println("sinceId " + sinceId)
 		case <-ctx.Done():
 			fmt.Println("shutting down")
 			return nil
@@ -46,7 +44,6 @@ func fetchApi(ctx context.Context, url string, token string, ch chan MastodonMes
 	// Prevent duplicate posts
 	if sinceId != "" {
 		url = url + "?since_id=" + sinceId
-		fmt.Println("fetching " + url)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -66,7 +63,9 @@ func fetchApi(ctx context.Context, url string, token string, ch chan MastodonMes
 	var messages []MastodonMessage
 	json.NewDecoder(response.Body).Decode(&messages)
 
-	lastId = messages[len(messages)-1].ID
+	if len(messages) > 0 {
+		lastId = messages[len(messages)-1].ID
+	}
 
 	for _, msg := range messages {
 		ch <- msg

@@ -10,32 +10,34 @@ import (
 	"syscall"
 )
 
+// token const token = "jWD0oGjXAyMmNbfBchMF23CZ-UDozjjsSvYYV_5xJBA"
+
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
+	mastodonToken := os.Getenv("MASTODON_TOKEN")
 
 	mode := flag.String("mode", "api", "Connector mode: api or stream")
 	flag.Parse()
 
 	if *mode == "stream" {
-		streamConnector()
+		streamConnector(ctx, mastodonToken)
 	} else if *mode == "api" {
-		apiConnector()
+		apiConnector(ctx, mastodonToken)
 	} else {
 		log.Fatal("Please select one of the following connector options: stream, api")
 	}
+
 }
 
-func streamConnector() {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
+func streamConnector(ctx context.Context, token string) {
 
 	//Init connector
 	ch := make(chan string)
 
 	//TODO Read from config
 	const mastodonURL = "https://mastodon.social/api/v1/streaming/public"
-
-	//Must be secured in KV or so
-	const token = "jWD0oGjXAyMmNbfBchMF23CZ-UDozjjsSvYYV_5xJBA"
 
 	connector := MastodonStreamConnector{mastodonURL, token}
 
@@ -52,16 +54,11 @@ func streamConnector() {
 	}
 }
 
-func apiConnector() {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
+func apiConnector(ctx context.Context, token string) {
 
 	ch := make(chan MastodonMessage)
 
 	const mastodonApiURL = "https://mastodon.social/api/v1/timelines/home"
-
-	//Must be secured in KV or so
-	const token = "jWD0oGjXAyMmNbfBchMF23CZ-UDozjjsSvYYV_5xJBA"
 
 	connector := MastodonApiConnector{mastodonApiURL, token}
 
